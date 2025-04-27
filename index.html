@@ -1,116 +1,50 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Comunidade França - Analisar Gráfico</title>
-  <style>
-    body {
-      background: #000;
-      color: #00ff90;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    h1 {
-      margin-bottom: 20px;
-      font-size: 2rem;
-    }
-    input[type="file"] {
-      margin-bottom: 20px;
-      padding: 10px;
-      border-radius: 8px;
-      background: #111;
-      border: 1px solid #00ff90;
-      color: #00ff90;
-    }
-    button {
-      background: #00ff90;
-      color: #000;
-      border: none;
-      padding: 12px 20px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    #resultado {
-      margin-top: 20px;
-      padding: 20px;
-      background: #111;
-      border-radius: 10px;
-      border: 1px solid #00ff90;
-      display: none;
-    }
-    #resultado img {
-      max-width: 100%;
-      margin-bottom: 15px;
-      border-radius: 10px;
-    }
-    #loading {
-      margin-top: 20px;
-      font-size: 18px;
-      display: none;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ferramenta de Análise de Gráficos</title>
 </head>
-<body>
-  <h1>Análise de Gráfico - IA</h1>
-  <input type="file" id="fileInput" accept="image/*">
-  <br>
-  <button onclick="analisar()">Analisar Gráfico</button>
-  <div id="loading">⏳ Analisando imagem, aguarde...</div>
-  <div id="resultado"></div>
+<body style="background:#000;color:#fff;text-align:center;padding:50px;font-family:sans-serif;">
+
+  <h1>Enviar Gráfico para Análise</h1>
+  <input type="file" id="fileInput" accept="image/*" style="margin:20px 0;"><br>
+  <button onclick="handleAnalyze()" style="padding:10px 20px;font-size:18px;">Analisar</button>
 
   <script>
-    async function analisar() {
+    async function handleAnalyze() {
       const fileInput = document.getElementById('fileInput');
-      const resultadoDiv = document.getElementById('resultado');
-      const loadingDiv = document.getElementById('loading');
+      const file = fileInput.files[0];
 
-      if (!fileInput.files.length) {
-        alert('Por favor, selecione uma imagem para análise.');
+      if (!file) {
+        alert('Selecione um arquivo!');
         return;
       }
 
-      resultadoDiv.style.display = 'none';
-      loadingDiv.style.display = 'block';
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result.split(',')[1]; // pega apenas o base64
 
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
+        try {
+          const response = await fetch('/api/analisar/rota', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64 })
+          });
 
-      try {
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          body: formData
-        });
+          const result = await response.json();
+          console.log('Resultado da Análise:', result);
 
-        const result = await response.json();
-        loadingDiv.style.display = 'none';
-
-        if (response.ok && result.message) {
-          resultadoDiv.innerHTML = `
-            <h2>Resultado da Análise:</h2>
-            <p>${result.message}</p>
-          `;
-          resultadoDiv.style.display = 'block';
-        } else {
-          resultadoDiv.innerHTML = `
-            <h2>Erro na análise:</h2>
-            <p>${result.error || 'Não foi possível analisar a imagem.'}</p>
-          `;
-          resultadoDiv.style.display = 'block';
+          alert(`Resultado: ${result.recomendacao} (Confiança: ${result.confianca})`);
+        } catch (error) {
+          console.error('Erro:', error);
+          alert('Erro ao analisar o gráfico.');
         }
-      } catch (error) {
-        console.error('Erro ao analisar:', error);
-        loadingDiv.style.display = 'none';
-        resultadoDiv.innerHTML = `
-          <h2>Erro inesperado:</h2>
-          <p>${error.message}</p>
-        `;
-        resultadoDiv.style.display = 'block';
-      }
+      };
+
+      reader.readAsDataURL(file);
     }
   </script>
+
 </body>
 </html>
