@@ -1,55 +1,48 @@
 export const config = {
-  runtime: 'edge',
+  runtime: 'edge', // obrigatório para funcionar como função Edge na Vercel
 };
 
-export default async function handler(req) {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Método não permitido' }), { status: 405 });
-  }
-
+export async function POST(req) {
   try {
     const { imageBase64 } = await req.json();
 
     if (!imageBase64) {
-      return new Response(JSON.stringify({ error: 'Imagem não enviada' }), { status: 400 });
+      return new Response(
+        JSON.stringify({ error: 'Imagem não recebida.' }),
+        { status: 400 }
+      );
     }
-
-    // Sua API KEY aqui (você pode usar variável de ambiente depois)
-    const OPENAI_API_KEY = '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';
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': 'Bearer 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'
       },
       body: JSON.stringify({
-        model: 'gpt-4-vision-preview',
+        model: "gpt-4-vision-preview",
         messages: [
           {
-            role: 'system',
-            content: 'Você é um analista de mercado especializado em análise gráfica de criptomoedas.',
-          },
-          {
-            role: 'user',
+            role: "user",
             content: [
-              { type: 'text', text: 'Analise essa imagem de gráfico e me diga se é melhor comprar ou vender.' },
-              { type: 'image', image: { base64_data: imageBase64 } },
-            ],
-          },
+              { type: "text", text: "Observe o gráfico enviado e sugira: COMPRA ou VENDA baseado em suportes, resistências e tendência." },
+              { type: "image", image: { base64: imageBase64 } }
+            ]
+          }
         ],
-        max_tokens: 1000,
-      }),
+        max_tokens: 500
+      })
     });
 
     const data = await response.json();
 
-    if (response.ok) {
-      return new Response(JSON.stringify({ result: data.choices[0].message.content }), { status: 200 });
-    } else {
-      return new Response(JSON.stringify({ error: data.error.message }), { status: 400 });
-    }
+    return new Response(JSON.stringify({
+      analysis: data.choices?.[0]?.message?.content || 'Não foi possível gerar a análise.',
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Erro interno ao processar a imagem.' }), { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
