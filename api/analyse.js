@@ -1,48 +1,58 @@
-// Estrutura base montada! Agora estou te entregando o primeiro arquivo: o analyze.js da API
+import formidable from 'formidable';
+import fs from 'fs';
+import { OpenAI } from 'openai';
 
-import { NextResponse } from 'next/server';
-
-export async function POST(req) { try { const { imageBase64 } = await req.json();
-
-if (!imageBase64) {
-  return NextResponse.json({ error: 'Imagem não fornecida.' }, { status: 400 });
-}
-
-const response = await fetch('https://api.openai.com/v1/chat/completions', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+export const config = {
+  api: {
+    bodyParser: false,
   },
-  body: JSON.stringify({
-    model: 'gpt-4-vision-preview',
-    messages: [
-      {
-        role: 'system',
-        content: 'Você é um analista de mercado financeiro. Analise o gráfico enviado de forma extremamente detalhada, comentando formações, padrões, tendências e sentimento do mercado.'
-      },
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: 'Analise detalhadamente esse gráfico:'
-          },
-          {
-            type: 'image',
-            image: { base64: imageBase64 }
-          }
-        ]
-      }
-    ],
-    max_tokens: 1000
-  })
+};
+
+const openai = new OpenAI({
+  apiKey: "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",
 });
 
-const data = await response.json();
-const content = data.choices?.[0]?.message?.content || 'Não foi possível gerar a análise.';
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método não permitido' });
+  }
 
-return NextResponse.json({ resultado: content });
+  const form = new formidable.IncomingForm();
 
-} catch (error) { console.error(error); return NextResponse.json({ error: 'Erro interno ao processar.' }, { status: 500 }); } }
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      console.error('Erro no form:', err);
+      return res.status(500).json({ error: 'Erro no upload' });
+    }
 
+    const file = files.file;
+    if (!file) {
+      return res.status(400).json({ error: 'Arquivo não encontrado' });
+    }
+
+    try {
+      const fileData = fs.readFileSync(file[0].filepath);
+      const base64Image = fileData.toString('base64');
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Analise essa imagem de gráfico e diga se a tendência é de compra ou venda. Seja objetivo." },
+              { type: "image", image: { base64: base64Image } }
+            ]
+          }
+        ],
+      });
+
+      const mensagem = response.choices[0]?.message?.content || "Não foi possível analisar.";
+
+      res.status(200).json({ message: mensagem });
+    } catch (error) {
+      console.error('Erro ao consultar OpenAI:', error);
+      res.status(500).json({ error: 'Erro ao analisar a imagem.' });
+    }
+  });
+}
