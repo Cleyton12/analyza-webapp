@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análise de Gráfico - IA Comunidade França</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #00ff90;
+      text-shadow: 0 0 8px #00ff90;
+    }
+    input[type="file"] {
+      margin: 20px 0;
+      padding: 10px;
+      background: #111;
+      border: 1px solid #00ff90;
+      color: #00ff90;
+      border-radius: 8px;
+    }
+    button {
+      background: #00ff90;
+      color: #000;
+      font-weight: bold;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #00cc74;
+    }
+    #resultado {
+      margin-top: 20px;
+      padding: 20px;
+      background: #111;
+      border-radius: 8px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Enviar Gráfico para Análise</h1>
+
+  <input type="file" id="fileInput" accept="image/*">
+  <br>
+  <button onclick="enviarImagem()">Analisar</button>
+
+  <div id="resultado"></div>
+
+  <script>
+    const supabaseUrl = "https://onydorslphtfukejlceq.supabase.co";
+    const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ueWRvcnNscGh0ZnVrZWpsY2VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1OTg5MTUsImV4cCI6MjA2MDE3NDkxNX0.n2WU3ufnwxQteD834i6FNCUbGK2HFgnYWp9Zjpo9Gjw";
+    const bucketName = "images";
+
+    async function enviarImagem() {
+      const fileInput = document.getElementById('fileInput');
+      const resultado = document.getElementById('resultado');
+
+      if (!fileInput.files.length) {
+        alert("Selecione uma imagem primeiro!");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const fileName = `${Date.now()}_${file.name}`;
+
+      // Upload da imagem no Supabase
+      const { data: uploadData, error: uploadError } = await fetch(`${supabaseUrl}/storage/v1/object/${bucketName}/${fileName}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': file.type
+        },
+        body: file
+      }).then(res => res.json());
+
+      if (uploadError) {
+        resultado.style.display = 'block';
+        resultado.innerText = "Erro ao enviar imagem: " + uploadError.message;
+        return;
+      }
+
+      const imageUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${encodeURIComponent(fileName)}`;
+
+      // Enviar imagem para a função analisa-print
+      const { data: analysisData, error: analysisError } = await fetch(`${supabaseUrl}/functions/v1/analisa-print`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnonKey}`
+        },
+        body: JSON.stringify({ url: imageUrl })
+      }).then(res => res.json());
+
+      if (analysisError || !analysisData) {
+        resultado.style.display = 'block';
+        resultado.innerText = "Não foi possível analisar. Tente novamente.";
+        return;
+      }
+
+      resultado.style.display = 'block';
+      resultado.innerHTML = `<strong>Resultado:</strong> ${analysisData.resultado}`;
+    }
+  </script>
+
+</body>
+</html>
