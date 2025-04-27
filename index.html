@@ -42,11 +42,11 @@
           console.log('Resultado da Análise:', result);
 
           alert(`Resultado: ${result.recomendacao} (Confiança: ${result.confianca})`);
-        } catch (error) {
-          console.error('Erro:', error);
-          alert('Erro ao analisar o gráfico.');
-        }
-      };
+        } .catch(async error => {
+  console.error('Erro:', error);
+  const errorMessage = await error?.message || 'Erro desconhecido.';
+  alert('Erro detalhado: ' + errorMessage);
+});
 
       reader.readAsDataURL(file);
     }
