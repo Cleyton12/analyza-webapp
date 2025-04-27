@@ -24,10 +24,10 @@
 
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64 = reader.result.split(',')[1]; // Retira o cabeçalho data:image/png;base64,
+        const base64 = reader.result.split(',')[1];
 
         try {
-          const response = await fetch('/api/analyze/rota', {
+          const response = await fetch('/api/analyse/rota', { // <<< AQUI AGORA É COM "S" >>> 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image: base64 })
