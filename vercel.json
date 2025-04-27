@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/analyze.js",
+      "src": "api/analyze/route.js",
       "use": "@vercel/node"
     },
     {
