@@ -1,82 +1,116 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Análise de Gráfico por IA</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Comunidade França - Analisar Gráfico</title>
   <style>
     body {
       background: #000;
-      color: #fff;
+      color: #00ff90;
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 30px;
+      padding: 20px;
     }
     h1 {
-      color: #00ff90;
-      text-shadow: 0 0 10px #00ff90;
+      margin-bottom: 20px;
+      font-size: 2rem;
     }
-    #preview {
-      margin-top: 20px;
-      max-width: 300px;
-      border: 2px solid #00ff90;
-      border-radius: 8px;
-    }
-    .result {
-      margin-top: 20px;
-      padding: 20px;
-      border: 2px solid #00ff90;
+    input[type="file"] {
+      margin-bottom: 20px;
+      padding: 10px;
       border-radius: 8px;
       background: #111;
+      border: 1px solid #00ff90;
+      color: #00ff90;
+    }
+    button {
+      background: #00ff90;
+      color: #000;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    #resultado {
+      margin-top: 20px;
+      padding: 20px;
+      background: #111;
+      border-radius: 10px;
+      border: 1px solid #00ff90;
+      display: none;
+    }
+    #resultado img {
+      max-width: 100%;
+      margin-bottom: 15px;
+      border-radius: 10px;
+    }
+    #loading {
+      margin-top: 20px;
+      font-size: 18px;
+      display: none;
     }
   </style>
 </head>
 <body>
-
-  <h1>Analyser de Gráfico por IA</h1>
-  <p>Envie seu print ou foto de gráfico para receber a análise!</p>
-
-  <input type="file" id="upload" accept="image/*">
-  <img id="preview" src="" alt="Pré-visualização" style="display:none;">
-  
-  <div class="result" id="resultado" style="display:none;"></div>
+  <h1>Análise de Gráfico - IA</h1>
+  <input type="file" id="fileInput" accept="image/*">
+  <br>
+  <button onclick="analisar()">Analisar Gráfico</button>
+  <div id="loading">⏳ Analisando imagem, aguarde...</div>
+  <div id="resultado"></div>
 
   <script>
-    const upload = document.getElementById('upload');
-    const preview = document.getElementById('preview');
-    const resultado = document.getElementById('resultado');
+    async function analisar() {
+      const fileInput = document.getElementById('fileInput');
+      const resultadoDiv = document.getElementById('resultado');
+      const loadingDiv = document.getElementById('loading');
 
-    upload.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+      if (!fileInput.files.length) {
+        alert('Por favor, selecione uma imagem para análise.');
+        return;
+      }
+
+      resultadoDiv.style.display = 'none';
+      loadingDiv.style.display = 'block';
 
       const formData = new FormData();
-      formData.append('file', file);
-
-      preview.src = URL.createObjectURL(file);
-      preview.style.display = 'block';
-
-      resultado.style.display = 'block';
-      resultado.innerHTML = 'Analisando...';
+      formData.append('file', fileInput.files[0]);
 
       try {
-        const res = await fetch('/api/analisar', {
+        const response = await fetch('/api/analyze', {
           method: 'POST',
           body: formData
         });
 
-        const data = await res.json();
+        const result = await response.json();
+        loadingDiv.style.display = 'none';
 
-        if (res.ok) {
-          resultado.innerHTML = `<strong>Resultado:</strong><br>${data.resultado}`;
+        if (response.ok && result.message) {
+          resultadoDiv.innerHTML = `
+            <h2>Resultado da Análise:</h2>
+            <p>${result.message}</p>
+          `;
+          resultadoDiv.style.display = 'block';
         } else {
-          resultado.innerHTML = `Erro: ${data.error || 'Erro desconhecido'}`;
+          resultadoDiv.innerHTML = `
+            <h2>Erro na análise:</h2>
+            <p>${result.error || 'Não foi possível analisar a imagem.'}</p>
+          `;
+          resultadoDiv.style.display = 'block';
         }
-      } catch (err) {
-        resultado.innerHTML = 'Erro ao analisar.';
+      } catch (error) {
+        console.error('Erro ao analisar:', error);
+        loadingDiv.style.display = 'none';
+        resultadoDiv.innerHTML = `
+          <h2>Erro inesperado:</h2>
+          <p>${error.message}</p>
+        `;
+        resultadoDiv.style.display = 'block';
       }
-    });
+    }
   </script>
-
 </body>
 </html>
