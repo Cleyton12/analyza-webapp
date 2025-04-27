@@ -26,7 +26,7 @@
         const base64 = reader.result.split(',')[1]; // pega apenas o base64
 
         try {
-          const response = await fetch('/api/analisar/rota', {
+          const response = await fetch('/api/analyse/rota', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image: base64 })
