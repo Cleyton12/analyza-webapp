@@ -27,7 +27,7 @@
         const base64 = reader.result.split(',')[1];
 
         try {
-          const response = await fetch('/api/analyze/rota', { // <<< AQUI AGORA É COM "S" >>> 
+          const response = await fetch('/api/analyse/rota', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image: base64 })
@@ -42,11 +42,22 @@
           console.log('Resultado da Análise:', result);
 
           alert(`Resultado: ${result.recomendacao} (Confiança: ${result.confianca})`);
-        } .catch(async error => {
-  console.error('Erro:', error);
-  const errorMessage = await error?.message || 'Erro desconhecido.';
-  alert('Erro detalhado: ' + errorMessage);
-});
+        } catch (error) {
+          console.error('Erro capturado:', error);
+
+          let errorMessage = '';
+
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          } else if (typeof error === 'string') {
+            errorMessage = error;
+          } else {
+            errorMessage = JSON.stringify(error);
+          }
+
+          alert('Erro detalhado: ' + errorMessage);
+        }
+      };
 
       reader.readAsDataURL(file);
     }
