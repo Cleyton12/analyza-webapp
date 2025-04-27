@@ -21,7 +21,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: 'Você é um analista de mercado financeiro. Ao receber uma imagem de um gráfico, diga se o melhor é COMPRAR, VENDER ou ESPERAR.'
+            content: 'Você é um analista de mercado financeiro. Ao receber uma imagem de gráfico, diga se o melhor é COMPRAR, VENDER ou ESPERAR.'
           },
           {
             role: 'user',
