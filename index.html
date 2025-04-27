@@ -8,8 +8,9 @@
 <body style="background:#000;color:#fff;text-align:center;padding:50px;font-family:sans-serif;">
 
   <h1>Enviar Gráfico para Análise</h1>
+
   <input type="file" id="fileInput" accept="image/*" style="margin:20px 0;"><br>
-  <button onclick="handleAnalyze()" style="padding:10px 20px;font-size:18px;">Analisar</button>
+  <button onclick="handleAnalyze()" style="padding:10px 20px;font-size:18px;">Analisar Gráfico</button>
 
   <script>
     async function handleAnalyze() {
@@ -23,14 +24,19 @@
 
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64 = reader.result.split(',')[1]; // pega apenas o base64
+        const base64 = reader.result.split(',')[1]; // Retira o cabeçalho data:image/png;base64,
 
         try {
-          const response = await fetch('/api/analyse/rota', {
+          const response = await fetch('/api/analyze/rota', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image: base64 })
           });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+          }
 
           const result = await response.json();
           console.log('Resultado da Análise:', result);
